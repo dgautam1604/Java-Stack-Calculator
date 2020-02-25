@@ -1,0 +1,236 @@
+package assignment2;
+
+import java.util.Stack;
+
+public class Ass2 {
+	public static int calculate(String expression) {
+		char[] elements = expression.toCharArray();
+		Stack<Integer> values = new Stack<Integer>();
+		int count = 0;
+		int unary=0;
+
+		// Stack for Operators: 'ops'
+		Stack<Character> operators = new Stack<Character>();
+
+		for (int i = 0; i < elements.length; i++) {
+			if (elements[i] == ' ') {
+				continue;
+			}
+			if (elements[i] >= '0' && elements[i] <= '9') {
+				StringBuffer str = new StringBuffer();
+
+				while (i < elements.length && elements[i] >= '0' && elements[i] <= '9'
+						 ) {
+					str.append(elements[i++]);
+				}
+				int num=Integer.parseInt(str.toString());
+				if(unary==1){
+					num=num*(-1);
+					unary=0;
+				}
+				values.push(num);
+			} else if (elements[i] == '(')
+				operators.push(elements[i]);
+
+			// Closing brace encountered, solve entire brace
+			else if (elements[i] == ')') {
+				while (operators.peek() != '(')
+					values.push(startOperation(operators.pop(), values.pop(),
+							values.pop(),0));
+				operators.pop();
+			}
+
+			else if ( elements[i] == '!' ) {
+				if(!(++i < elements.length && (elements[i] == '='))){
+					--i;
+				int k = values.pop();
+				if (k == 0) {
+					values.push(1);
+				} else {
+					int a=k;
+					while (k > 1) {
+						k--;
+						a = a * (k);
+						
+					}
+
+					values.push(a);
+				}
+				
+			}
+				else{
+					i--;
+					if(operators.empty()){
+						operators.push(elements[i]);
+						operators.push(elements[++i]);
+					}
+					else{
+					while (!operators.empty() && precedenceOrder(elements[i], operators.peek()) ){
+						count=0;
+						if(operators.peek() == '='){
+							count=1;
+							operators.pop();
+						}
+						values.push(startOperation(operators.pop(), values.pop(),
+								values.pop(), count));
+					}
+						
+
+					// Push current token to 'ops'.
+					operators.push(elements[i]);
+					operators.push(elements[++i]);
+					}
+				}
+			}
+			else if (unary == 0 && (elements[i] == '+' || elements[i] == '-'
+					|| elements[i] == '*' || elements[i] == '/'
+					|| elements[i] == '>' || elements[i] == '^'
+					|| elements[i] == '=' || elements[i] == '!'
+					|| elements[i] == '<')){
+				/*
+				 * StringBuffer str1=new StringBuffer();
+				 * str1.append(elements[i]);
+				 */
+				if(elements[i+2] == '-' || i==0){
+					unary++;
+				}
+				
+
+				while (!operators.empty() && precedenceOrder(elements[i], operators.peek()) ){
+					count=0;
+					if(operators.peek() == '='){
+						count=1;
+						operators.pop();
+					}
+					values.push(startOperation(operators.pop(), values.pop(),
+							values.pop(), count));
+				}
+				// Push current token to 'ops'.
+				operators.push(elements[i]);
+				
+				if (++i < elements.length && elements[i] == '=') {
+					operators.push(elements[i]);
+				} else {
+					i--;
+				}
+
+			}
+
+		}
+
+		while (!operators.empty()){
+			count=0;
+			if(operators.peek() == '='){
+				count=1;
+				operators.pop();
+			}
+			values.push(startOperation(operators.pop(), values.pop(),
+					values.pop(), count));
+		}
+			
+		
+		
+		return values.pop();
+
+	}
+
+	public static int startOperation(char operator,  int b,int a, int cnt) {
+		// TODO Auto-generated method stub
+		switch (operator) {
+		case '+':
+			return a + b;
+		case '-':
+			return a - b;
+		case '*':
+			return a * b;
+		case '/':
+			if (b == 0)
+				throw new UnsupportedOperationException(
+						"Divide by zero exception ");
+			return a / b;
+		case '^':
+			return (int) (Math.pow(a, b));
+		case '>':
+			if (cnt == 0) {
+				if (a > b)
+					return 1;
+				else
+					return 0;
+			}
+
+			else {
+				if (a >= b)
+					return 1;
+				else
+					return 0;
+			}
+		case '<':
+			if (cnt == 0) {
+				if (a < b)
+					return 1;
+				else
+					return 0;
+			}
+
+			else {
+				if (a <= b)
+					return 1;
+				else
+					return 0;
+			}
+		case '=':
+			if (cnt == 1) {
+				if (a == b)
+					return 1;
+				else
+					return 0;
+			} else
+				throw new UnsupportedOperationException("Unknown operator ");
+		case '!':
+			if (cnt == 1) {
+				if (a != b)
+					return 1;
+				else
+					return 0;
+			} else
+				throw new UnsupportedOperationException("Unknown operator ");
+		}
+		return 0;
+
+	}
+
+	public static boolean precedenceOrder(char m, char n) {
+		if (n == '(' || n == ')') 
+			return false; 
+		
+		if ((m == '^')
+				&& (n == '+' || n == '-' || n == '*' || n == '/' || n == '>'
+						|| n == '<' || n == '^' || n == '=' || n == '!'))
+			return false;
+
+		if (((m == '*') || (m == '/'))
+				&& (n == '+' || n == '-' || n == '>' || n == '<' 
+						|| n == '=' || n == '!'))
+			return false;
+
+		if (((m == '+') || (m == '-'))
+				&& (n == '>' || n == '<' || n == '=' || n == '!'))
+			return false;
+
+		if (((m == '>') || (m == '<')) && (n == '=' || n == '!'))
+			return false;
+
+		else
+			return true;
+	}
+
+	public static void main(String[] args) {
+		/*
+		 * System.out.println(EvaluateString.evaluate("10 + 2 * 6"));
+		 * System.out.println(EvaluateString.evaluate("100 * 2 + 12"));
+		 * System.out.println(EvaluateString.evaluate("100 * ( 2 + 12 )"));
+		 */
+		System.out.println(Ass2.calculate("5 + -6 + 7 * 2 >= 2 ^ 3"));
+	}
+
+}
